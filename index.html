@@ -3,52 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XAUUSD Chart</title>
-  <!-- Fixed Stable Version of TradingView Lightweight Charts -->
+  <title>Live Market Chart</title>
+  <!-- Stable Lightweight Charts Library -->
   <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
-    body { background-color: #131722; color: #d1d4dc; margin: 0; padding: 0; font-family: sans-serif; }
+    body { background-color: #131722; color: #d1d4dc; margin: 0; padding: 0; font-family: sans-serif; overflow: hidden; }
     #header { height: 50px; background: #1e222d; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #2a2e39; }
-    .title { font-size: 15px; font-weight: bold; color: #ffb74d; }
+    .title { font-size: 15px; font-weight: bold; color: #00e676; }
     #chart-container { width: 100vw; height: calc(100vh - 50px); }
   </style>
 </head>
 <body>
 
   <div id="header">
-    <div class="title">XAUUSD Live Chart</div>
+    <div class="title">PAXG/USDT (Gold Live Stream)</div>
   </div>
 
   <div id="chart-container"></div>
 
   <script>
-    try {
-      // 1. Chart Init
-      const chartContainer = document.getElementById('chart-container');
-      const chart = LightweightCharts.createChart(chartContainer, {
-        layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
-        grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
-        timeScale: { timeVisible: true, secondsVisible: true }
-      });
+    // 1. Chart Init
+    const chartContainer = document.getElementById('chart-container');
+    const chart = LightweightCharts.createChart(chartContainer, {
+      layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
+      grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
+      timeScale: { timeVisible: true, secondsVisible: true }
+    });
 
-      const candleSeries = chart.addCandlestickSeries();
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#089981',
+      downColor: '#f23645',
+      borderDownColor: '#f23645',
+      borderUpColor: '#089981',
+      wickDownColor: '#f23645',
+      wickUpColor: '#089981',
+    });
 
-      // 2. Sample Data Load
-      const sampleData = [
-        { time: 1718000000, open: 2320, high: 2335, low: 2315, close: 2330 },
-        { time: 1718000060, open: 2330, high: 2340, low: 2325, close: 2338 },
-        { time: 1718000120, open: 2338, high: 2345, low: 2330, close: 2342 }
-      ];
-      candleSeries.setData(sampleData);
+    // 2. Fetch Real Historical Candles from Binance
+    async function loadRealData() {
+      try {
+        const response = await fetch('https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=1m&limit=200');
+        const rawData = await response.json();
+        
+        const formattedData = rawData.map(d => ({
+          time: Math.floor(d[0] / 1000),
+          open: parseFloat(d[1]),
+          high: parseFloat(d[2]),
+          low: parseFloat(d[3]),
+          close: parseFloat(d[4])
+        }));
 
-      // Window Resize Fix for Tabs
-      window.addEventListener('resize', () => {
-        chart.applyOptions({ width: window.innerWidth, height: window.innerHeight - 50 });
-      });
+        candleSeries.setData(formattedData);
+        chart.timeScale().fitContent();
 
-    } catch (error) {
-      document.body.innerHTML = "<h2 style='color:red; padding:20px;'>Error: " + error.message + "</h2>";
+        // Start Live WebSocket Stream after loading history
+        startLiveStream();
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
     }
+
+    // 3. Live WebSocket Connection
+    function startLiveStream() {
+      const ws = new WebSocket('wss://stream.binance.com:9443/ws/paxgusdt@kline_1m');
+
+      ws.onmessage = function(event) {
+        const message = JSON.parse(event.data);
+        const kline = message.k;
+
+        const liveCandle = {
+          time: Math.floor(kline.t / 1000),
+          open: parseFloat(kline.o),
+          high: parseFloat(kline.h),
+          low: parseFloat(kline.l),
+          close: parseFloat(kline.c)
+        };
+
+        candleSeries.update(liveCandle);
+      };
+    }
+
+    loadRealData();
+
+    // Auto-resize for Tab
+    window.addEventListener('resize', () => {
+      chart.applyOptions({ width: window.innerWidth, height: window.innerHeight - 50 });
+    });
   </script>
 </body>
 </html>
