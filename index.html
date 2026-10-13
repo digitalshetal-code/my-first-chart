@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XAUUSD Chart</title>
-  <!-- TradingView Lightweight Charts Library -->
-  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- Fixed Stable Version of TradingView Lightweight Charts -->
+  <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
   <style>
     body { background-color: #131722; color: #d1d4dc; margin: 0; padding: 0; font-family: sans-serif; }
     #header { height: 50px; background: #1e222d; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #2a2e39; }
@@ -26,14 +26,14 @@
       // 1. Chart Init
       const chartContainer = document.getElementById('chart-container');
       const chart = LightweightCharts.createChart(chartContainer, {
-        layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
+        layout: { backgroundColor: '#131722', textColor: '#d1d4dc' },
         grid: { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
         timeScale: { timeVisible: true, secondsVisible: true }
       });
 
       const candleSeries = chart.addCandlestickSeries();
 
-      // 2. Dummy Safe Data Load (Taaki pehle chart load ho jaye bina error ke)
+      // 2. Sample Data Load
       const sampleData = [
         { time: 1718000000, open: 2320, high: 2335, low: 2315, close: 2330 },
         { time: 1718000060, open: 2330, high: 2340, low: 2325, close: 2338 },
